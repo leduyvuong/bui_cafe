@@ -1,0 +1,86 @@
+<div id="table-grid">
+</div>
+<script>
+  const tableGrid = document.getElementById('table-grid');
+  const apiBaseUrl = 'v1/dashboard/load'; // Update with your actual base URL
+
+  // Function to fetch and display tables
+  async function loadTables() {
+    try {
+      const response = await fetch(`${apiBaseUrl}/tables`);
+      const tables = await response.json();
+
+      tableGrid.innerHTML = ''; // Clear existing tables
+
+      tables.data.forEach(table => {
+        const tableDiv = document.createElement('div');
+        tableDiv.classList.add('table');
+        tableDiv.innerHTML = `<h2>Table ${table.id}</h2>`;
+
+        const statusButton = document.createElement('button');
+        statusButton.textContent = convertStatus(table.status);
+        statusButton.classList.add(convertStatus(table.status));
+        statusButton.addEventListener('click', () => updateTableStatus(table.id, statusButton));
+
+        tableDiv.appendChild(statusButton);
+        tableGrid.appendChild(tableDiv);
+      });
+    } catch (error) {
+      console.error('Error fetching tables:', error);
+    }
+  }
+
+  // Function to update table status
+  async function updateTableStatus(tableId, button) {
+    const newStatus = getNextStatus(button.textContent); // Determine the next status
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/update_table`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tableId, status: newStatus })
+      });
+
+      if (response.ok) {
+        button.textContent = newStatus;
+        button.className = newStatus; // Update button's class for styling
+      } else {
+        console.error('Error updating table status:', response.status);
+      }
+    } catch (error) {
+      console.error('Error updating table status:', error);
+    }
+  }
+
+  // Helper function to get the next status cyclically
+  function getNextStatus(currentStatus) {
+    switch (currentStatus) {
+      case 0:
+        return 'occupied';
+      case 1:
+        return 'reserved';
+      case 2:
+        return 'available';
+      default:
+        return 'available';
+    }
+  }
+
+  function convertStatus(currentStatus) {
+    switch (currentStatus) {
+      case 0:
+        return 'available';
+      case 1:
+        return 'occupied';
+      case 2:
+        return 'reserved';
+      default:
+        return 'available';
+    }
+  }
+
+  // Load tables on page load
+  loadTables();
+</script>

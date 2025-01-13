@@ -1,0 +1,239 @@
+<div class="container drinks" data-drinks="<%= @categories %>">
+	<div class="button-grid">
+		<button id="add-btn" class="btn">
+			<i class="fas fa-plus"></i> Menu
+		</button>
+		<button id="call-staff-btn" class="btn">
+			<i class="fas fa-bell"></i> Gọi nhân viên.
+		</button>
+		<button id="list-btn" class="btn">
+			<i class="fas fa-list"></i> Your orders
+		</button>
+		<button id="pay-btn" class="btn">
+			<i class="fas fa-credit-card"></i> Thanh toán
+		</button>
+	</div>
+
+	<div id="add-modal" class="modal">
+		<div class="modal-content">
+			<span class="close-btn">×</span>
+			<h2>Drink Menu</h2>
+			<div class="drink-grid">
+
+			</div>
+		</div>
+	</div>
+
+	<div id="list-modal" class="modal">
+		<div class="modal-content">
+			<span class="close-btn">×</span>
+			<h2>Your Order</h2>
+			<ul id="order-list">
+			</ul>
+			<button class="order">Đặt món</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		const addBtn = document.getElementById('add-btn');
+		const callStaffBtn = document.getElementById('call-staff-btn');
+		const listBtn = document.getElementById('list-btn');
+		const payBtn = document.getElementById('pay-btn');
+		const addModal = document.getElementById('add-modal');
+		const listModal = document.getElementById('list-modal');
+		const closeButtons = document.querySelectorAll('.close-btn');
+		const drinkGrid = document.querySelector('.drink-grid');
+		const orderList = document.getElementById('order-list');
+
+		// Sample drink data
+		let drinks = [];
+
+		fetch('v1/dashboard/load/products', {
+			method: 'GET'
+		})
+			.then(response => {
+				if (!response.ok) {
+					throw new Error('Network response was not ok');
+				}
+				return response.json();
+			})
+			.then(data => {
+				drinks = data.data
+			})
+			.catch(error => {
+				console.error('Error fetching data:', error);
+			});
+
+		let order = JSON.parse(localStorage.getItem('order')) || [];
+
+		// Function to populate the drink menu
+		function populateDrinkMenu() {
+			drinkGrid.innerHTML = '';
+			drinks.forEach((drink, index) => {
+				let drinkItem = document.createElement('div');
+				drinkItem.classList.add('drink-item');
+				drinkItem.innerHTML = `
+					<img src="${drink.image}" alt="${drink.name}">
+					<h3>${drink.name}</h3>
+					<p>${drink.price}</p>
+					<textarea placeholder="Notes" data-index="${index}"></textarea>
+					<button class="add-to-list" data-index="${index}">Add to List</button>
+				`;
+				drinkGrid.appendChild(drinkItem);
+			});
+
+			// Event listeners for 'Add to List' buttons and notes
+			addEventListenersToDrinkItems();
+		}
+
+		// Event Listeners
+		addBtn.addEventListener('click', () => {
+			populateDrinkMenu();
+			addModal.style.display = 'block';
+		});
+
+		callStaffBtn.addEventListener('click', () => {
+			alert('Calling staff...');
+		});
+
+		listBtn.addEventListener('click', () => {
+			updateOrderList();
+			addEventListenersToOrders();
+			listModal.style.display = 'block';
+		});
+
+		payBtn.addEventListener('click', () => {
+			alert('Proceeding to payment...');
+		});
+
+		closeButtons.forEach(button => {
+			button.addEventListener('click', () => {
+				addModal.style.display = 'none';
+				listModal.style.display = 'none';
+			});
+		});
+
+		window.addEventListener('click', (event) => {
+			if (event.target === addModal || event.target === listModal) {
+				addModal.style.display = 'none';
+				listModal.style.display = 'none';
+			}
+		});
+
+		// Function to add event listeners to drink items
+		function addEventListenersToDrinkItems() {
+			const addToListButtons = document.querySelectorAll('.add-to-list');
+			const noteTextareas = document.querySelectorAll('.drink-item textarea');
+
+			addToListButtons.forEach(button => {
+				button.addEventListener('click', function() {
+					const index = this.dataset.index;
+					const drink = drinks[index];
+					const note = noteTextareas[index].value;
+					const selectedDrink = {
+						...drink,
+						notes: note,
+						quantity: 1
+					};
+					let isExist = false;
+					if (!note) {
+						order.forEach(item => {
+							if (item.id === drink.id) {
+								item.quantity += 1;
+								isExist = true;
+							}
+						});
+					}
+
+					if (!isExist) {
+						order.push({
+							...drinks[index],
+							notes: note,
+							quantity: 1
+						});
+					}
+					localStorage.setItem('order', JSON.stringify(order));
+					alert(`${drinks[index].name} added to list!`);
+				});
+			});
+
+			noteTextareas.forEach(textarea => {
+				textarea.addEventListener('input', function() {
+					const index = this.dataset.index;
+					drinks[index].notes = this.value;
+				});
+			});
+		}
+
+		function addEventListenersToOrders() {
+			const orderButtons = document.querySelectorAll('.order');
+
+			orderButtons.forEach(button => {
+				button.addEventListener('click', function() {
+					if (order.length == 0) {
+						alert('Thêm món chi đã rồi chốt đơn!');
+						return;
+					}
+
+					fetch('v1/dashboard/load/orders', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-CSRF-Token': '<%= form_authenticity_token %>'
+						},
+						body: JSON.stringify({ orders: order })
+					})
+						.then(response => {
+							if (!response.ok) {
+								throw new Error('Network response was not ok');
+							}
+							return response.json();
+						})
+						.then(data => {
+							
+						})
+						.catch(error => {
+							console.error('Error fetching data:', error);
+						});
+					order.push(selectedDrink);
+					localStorage.setItem('order', JSON.stringify(order));
+				});
+			});
+		}
+
+		// Function to update the order list
+		function updateOrderList() {
+			orderList.innerHTML = '';
+			order.forEach((item, index) => {
+				let listItem = document.createElement('li');
+				listItem.innerHTML = `
+					<div class="item-details">
+						<div class="item-name">${item.name}</div>
+						<div class="item-price">${item.price}</div>
+						<div class="item-price">${item.quantity}</div>
+						<div class="item-notes">${item.notes || 'No notes'}</div>
+					</div>
+					<button class="remove-item" data-index="${index}">Xóa</button>
+				`;
+				orderList.appendChild(listItem);
+			});
+
+			// Event listeners for remove buttons
+			addEventListenersToRemoveButtons();
+		}
+
+		// Function to add event listeners to remove buttons
+		function addEventListenersToRemoveButtons() {
+			const removeButtons = document.querySelectorAll('.remove-item');
+			removeButtons.forEach(button => {
+				button.addEventListener('click', function() {
+					const index = this.dataset.index;
+					order.splice(index, 1);
+					updateOrderList();
+				});
+			});
+		}
+	});
+</script>
