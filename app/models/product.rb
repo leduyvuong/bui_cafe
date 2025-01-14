@@ -1,3 +1,5 @@
 class Product < ApplicationRecord
-  has_one :category
+  belongs_to :category
+  has_many :images
+  has_one_attached :image
 end

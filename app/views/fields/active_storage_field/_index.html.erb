@@ -1,0 +1,5 @@
+<% if field.data.attached? %>
+  <%= field.data.respond_to?(:each) ? field.data.count : field.data.filename %>
+<% else %>
+  No file
+<% end %>

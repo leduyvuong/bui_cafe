@@ -1,5 +1,6 @@
 <div class="container drinks" data-drinks="<%= @categories %>">
-	<div class="button-grid">
+	<%= image_tag('logo.jpg')%>
+	<div class="button-grid" style="margin-top: 20px">
 		<button id="add-btn" class="btn">
 			<i class="fas fa-plus"></i> Menu
 		</button>
@@ -73,11 +74,13 @@
 			drinkGrid.innerHTML = '';
 			drinks.forEach((drink, index) => {
 				let drinkItem = document.createElement('div');
+				let image = drink.image ? drink.image : '/logo.jpg';
+				const formattedAmount = new Intl.NumberFormat('en-US', { useGrouping: true }).format(drink.price).replace(/,/g, ' ');
 				drinkItem.classList.add('drink-item');
 				drinkItem.innerHTML = `
-					<img src="${drink.image}" alt="${drink.name}">
+					<img src="${image}" alt="${drink.name}">
 					<h3>${drink.name}</h3>
-					<p>${drink.price}</p>
+					<p>${formattedAmount} vnđ</p>
 					<textarea placeholder="Notes" data-index="${index}"></textarea>
 					<button class="add-to-list" data-index="${index}">Add to List</button>
 				`;

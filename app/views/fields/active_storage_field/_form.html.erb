@@ -1,0 +1,54 @@
+<div class="field-unit field-unit--text field-unit--optional">
+  <div class="field-unit__label">
+    <label for="product_description">Image: </label>
+  </div>
+  <div class="field-unit__field">
+    <div id="image-preview" style="margin-top: 10px;">
+      <% if field.data.attached? %>
+        <% if field.data.respond_to?(:each) %>
+          <% field.data.each do |attachment| %>
+            <%= image_tag url_for(attachment), style: "max-width: 150px; max-height: 150px;" %><br>
+          <% end %>
+        <% else %>
+          <%= image_tag url_for(field.data), style: "max-width: 150px; max-height: 150px;" %>
+        <% end %>
+      <% else %>
+        Không có ảnh.
+      <% end %>
+    </div>
+    <%= f.file_field field.attribute, multiple: field.data.respond_to?(:each), class: "file-input", id: "image-upload"%>
+  </div>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const imageUploadInput = document.getElementById("image-upload");
+    const imagePreview = document.getElementById("image-preview");
+
+    if (imageUploadInput) {
+      imageUploadInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+
+          reader.onload = (e) => {
+            // Xóa ảnh cũ nếu có
+            const existingImage = document.querySelector("#image-preview img");
+            if (existingImage) {
+              existingImage.remove();
+            }
+
+            // Thêm ảnh mới
+            const newImage = document.createElement("img");
+            newImage.src = e.target.result;
+            newImage.style.maxWidth = "150px";
+            newImage.style.maxHeight = "150px";
+            imagePreview.appendChild(newImage);
+          };
+
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+  });
+
+</script>

@@ -1,0 +1,11 @@
+<% if field.data.attached? %>
+  <% if field.data.respond_to?(:each) %>
+    <% field.data.each do |attachment| %>
+      <%= image_tag url_for(attachment), style: "max-width: 150px; max-height: 150px;" %><br>
+    <% end %>
+  <% else %>
+    <%= image_tag url_for(field.data), style: "max-width: 150px; max-height: 150px;" %>
+  <% end %>
+<% else %>
+  Không có ảnh.
+<% end %>
